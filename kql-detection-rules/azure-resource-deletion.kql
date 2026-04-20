@@ -1,0 +1,17 @@
+// Rule: Azure Resource Deletion Detected
+// Severity: High
+// Description: Detects successful deletion of Azure resources indicating destructive attack or insider threat
+
+AzureActivity
+| where OperationNameValue endswith "DELETE"
+| where ActivityStatusValue == "Success"
+| where TimeGenerated > ago(1h)
+| summarize DeletionCount = count(),
+            Resources = make_set(ResourceId),
+            FirstDeletion = min(TimeGenerated),
+            LastDeletion = max(TimeGenerated)
+            by Caller, CallerIpAddress
+| where DeletionCount >= 1
+| extend AlertDetail = strcat("User: ", Caller,
+         " deleted ", tostring(DeletionCount),
+         " resources from IP: ", CallerIpAddress)

@@ -1,0 +1,15 @@
+// Rule: Suspicious Sign-in From Unknown Location
+// Severity: High
+// Description: Detects successful sign-ins flagged as risky by Entra ID identity protection
+
+SigninLogs
+| where TimeGenerated > ago(1h)
+| where RiskLevelDuringSignIn in ("medium", "high")
+| where ResultType == "0"
+| summarize SigninCount = count(),
+            Locations = make_set(Location),
+            IPAddresses = make_set(IPAddress)
+            by UserPrincipalName, AppDisplayName
+| extend AlertDetail = strcat("User: ", UserPrincipalName,
+         " signed in from risky locations: ",
+         tostring(Locations))

@@ -1,0 +1,15 @@
+// Rule: High Volume Azure Activity From Single IP
+// Severity: Medium
+// Description: Detects unusually high Azure operations from single IP indicating compromised account
+
+AzureActivity
+| where TimeGenerated > ago(1h)
+| summarize OperationCount = count(),
+            Operations = make_set(OperationNameValue),
+            FirstSeen = min(TimeGenerated),
+            LastSeen = max(TimeGenerated)
+            by CallerIpAddress, Caller
+| where OperationCount >= 20
+| extend AlertDetail = strcat("IP: ", CallerIpAddress,
+         " performed ", tostring(OperationCount),
+         " operations as user: ", Caller)

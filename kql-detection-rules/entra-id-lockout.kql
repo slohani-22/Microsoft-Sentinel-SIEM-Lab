@@ -1,0 +1,15 @@
+// Rule: Entra ID Account Locked Out
+// Severity: Medium
+// Description: Detects repeated failed sign-ins resulting in lockout indicating brute force
+
+SigninLogs
+| where TimeGenerated > ago(1h)
+| where ResultType in ("50053", "50055", "50056")
+| summarize LockoutCount = count(),
+            IPAddresses = make_set(IPAddress),
+            Locations = make_set(Location)
+            by UserPrincipalName, AppDisplayName
+| where LockoutCount >= 3
+| extend AlertDetail = strcat("Account: ", UserPrincipalName,
+         " locked out ", tostring(LockoutCount),
+         " times from IPs: ", tostring(IPAddresses))

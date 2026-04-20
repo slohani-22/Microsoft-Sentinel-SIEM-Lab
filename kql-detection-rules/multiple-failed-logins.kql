@@ -1,0 +1,17 @@
+// Rule: Multiple Failed Login Attempts (Brute Force Detection)
+// Severity: Medium
+// Description: Detects 5 or more failed login attempts from the same IP within 1 hour
+
+SecurityEvent
+| where EventID == 4625
+| where TimeGenerated > ago(1h)
+| summarize FailedAttempts = count(),
+            AccountNames = make_set(Account),
+            FirstAttempt = min(TimeGenerated),
+            LastAttempt = max(TimeGenerated)
+            by IpAddress
+| where FailedAttempts >= 5
+| extend AlertDetail = strcat("IP: ", IpAddress,
+         " failed ", tostring(FailedAttempts),
+         " times targeting accounts: ",
+         tostring(AccountNames))

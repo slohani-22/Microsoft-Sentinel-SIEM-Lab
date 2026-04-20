@@ -1,0 +1,15 @@
+// Rule: Privileged Role Assignment Detected
+// Severity: High
+// Description: Detects when a privileged role is assigned indicating potential privilege escalation
+
+AuditLogs
+| where OperationName == "Add member to role"
+| where Result == "success"
+| where TimeGenerated > ago(1h)
+| extend TargetUser = tostring(TargetResources[0].userPrincipalName)
+| extend Role = tostring(TargetResources[0].displayName)
+| extend InitiatedBy = tostring(InitiatedBy.user.userPrincipalName)
+| summarize count() by TargetUser, Role, InitiatedBy, TimeGenerated
+| extend AlertDetail = strcat("User: ", InitiatedBy,
+         " assigned role: ", Role,
+         " to: ", TargetUser)

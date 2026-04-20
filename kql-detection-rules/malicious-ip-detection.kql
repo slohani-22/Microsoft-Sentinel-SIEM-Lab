@@ -1,0 +1,21 @@
+// Rule: Malicious IP Detected in Logs
+// Severity: High
+// Description: Detects connections to/from known malicious IPs in threat intelligence watchlist
+
+let MaliciousIPs = _GetWatchlist('MaliciousIPs')
+    | extend IPAddress = column_ifexists("IPAddress", ""),
+             ThreatType = column_ifexists("ThreatType", ""),
+             Confidence = column_ifexists("Confidence", ""),
+             Description = column_ifexists("Description", "");
+SecurityEvent
+| where EventID in (4624, 4625)
+| lookup kind=inner MaliciousIPs on $left.IpAddress == $right.IPAddress
+| summarize MatchCount = count(),
+            EventTypes = make_set(EventID),
+            FirstSeen = min(TimeGenerated),
+            LastSeen = max(TimeGenerated)
+            by IpAddress, ThreatType, Confidence, Description, Account
+| extend AlertDetail = strcat("Malicious IP: ", IpAddress,
+         " ThreatType: ", ThreatType,
+         " Confidence: ", Confidence,
+         " matched ", tostring(MatchCount), " events")

@@ -1,0 +1,11 @@
+IPAddress,ThreatType,Confidence,Description
+185.220.101.45,TorExitNode,High,Known Tor exit node
+194.165.16.77,Malware,High,Known malware C2 server
+45.83.193.150,Scanner,Medium,Known port scanner
+91.108.4.1,Botnet,High,Known botnet node
+185.130.44.108,Phishing,High,Known phishing infrastructure
+198.199.70.23,Brute Force,High,Known SSH brute force source
+104.21.14.200,Scanner,Medium,Known vulnerability scanner
+185.220.100.240,TorExitNode,High,Known Tor exit node
+194.61.24.102,Malware,High,Known malware distribution
+45.142.212.100,Botnet,Medium,Known botnet C2

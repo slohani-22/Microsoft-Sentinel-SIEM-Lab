@@ -1,0 +1,14 @@
+// Rule: New User Account Created Outside Business Hours
+// Severity: Medium
+// Description: Detects new local user accounts created outside business hours indicating persistence
+
+SecurityEvent
+| where EventID == 4720
+| where TimeGenerated > ago(1h)
+| extend HourOfDay = datetime_part("hour", TimeGenerated)
+| where HourOfDay !between (9 .. 17)
+| summarize count() by Account, SubjectUserName,
+            Computer, TimeGenerated
+| extend AlertDetail = strcat("Account: ", Account,
+         " created by: ", SubjectUserName,
+         " on: ", Computer)
