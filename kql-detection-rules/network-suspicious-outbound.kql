@@ -1,0 +1,24 @@
+// Rule: Network - Suspicious Outbound Connection
+// Severity: Medium
+// MITRE: T1071 - Application Layer Protocol
+// Tactic: Command and Control
+// Description: Detects outbound connections from VM to external addresses
+//              via VNet flow logs ingested through Traffic Analytics
+// Status: Rule saved - AzureNetworkAnalytics_CL table pending population
+//         by Traffic Analytics. Will activate automatically once table exists.
+
+AzureNetworkAnalytics_CL
+| where TimeGenerated > ago(1h)
+| where FlowType_s == "ExternalPublic"
+| where FlowDirection_s == "O"
+| where SrcIP_s startswith "10."
+      or SrcIP_s startswith "172."
+      or SrcIP_s startswith "192.168."
+| project TimeGenerated, SrcIP_s, DestIP_s,
+          DestPort_d, L7Protocol_s,
+          FlowStatus_s, VMName_s
+| extend AlertDetail = strcat(
+    "Outbound connection from: ", SrcIP_s,
+    " to: ", DestIP_s,
+    " port: ", DestPort_d
+  )

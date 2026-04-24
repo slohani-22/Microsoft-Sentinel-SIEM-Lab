@@ -1,0 +1,28 @@
+// Rule: Suspicious Process Creation - Office App Spawning Shell
+// Severity: High
+// MITRE: T1059.001 - Command and Scripting Interpreter: PowerShell
+// Tactic: Execution
+// Description: Detects Office applications spawning cmd.exe or powershell.exe,
+//              indicating potential malicious macro execution or phishing payload
+
+SecurityEvent
+| where EventID == 4688
+| where TimeGenerated > ago(1h)
+| extend ParentProcess = tostring(ParentProcessName)
+| extend NewProcess = tostring(NewProcessName)
+| where ParentProcess has_any (
+    "winword.exe", "excel.exe", "outlook.exe",
+    "powerpnt.exe", "mspub.exe", "msaccess.exe"
+  )
+| where NewProcess has_any (
+    "cmd.exe", "powershell.exe", "wscript.exe",
+    "cscript.exe", "mshta.exe", "rundll32.exe"
+  )
+| project TimeGenerated, Computer, Account,
+          ParentProcess, NewProcess, CommandLine,
+          SubjectUserName
+| extend AlertDetail = strcat(
+    "Parent: ", ParentProcess,
+    " spawned: ", NewProcess,
+    " on: ", Computer
+  )

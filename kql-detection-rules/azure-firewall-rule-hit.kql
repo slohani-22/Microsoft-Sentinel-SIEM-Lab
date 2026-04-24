@@ -1,0 +1,17 @@
+// Rule: Network - Azure Firewall Rule Hit
+// Severity: Medium
+// MITRE: T1071 - Application Layer Protocol
+// Tactic: Command and Control
+// Description: Detects network traffic logged by Azure Firewall during simulation.
+//              Azure Firewall was active during kill chain simulation window only.
+//              56 network rule hits captured. Logs persist after firewall deprovisioning.
+
+AzureDiagnostics
+| where TimeGenerated > ago(1h)
+| where Category == "AzureFirewallNetworkRule"
+| where msg_s has_any ("Deny", "Allow")
+| project TimeGenerated, msg_s,
+          Resource, ResourceGroup
+| extend AlertDetail = strcat(
+    "Firewall rule hit: ", msg_s
+  )

@@ -1,0 +1,27 @@
+// Rule: Collection - Data Staging in Temp Directory
+// Severity: Medium
+// MITRE: T1074.001 - Data Staged: Local Data Staging
+// Tactic: Collection
+// Description: Detects high volume file operations in temp directories
+//              indicating potential data staging prior to exfiltration
+// False positive note: Threshold of 10 may catch installers. In production
+//                      raise to 50 and add: | where Account !endswith "$"
+
+SecurityEvent
+| where EventID == 4663
+| where TimeGenerated > ago(1h)
+| where ObjectName has_any (
+    "\\Temp\\", "\\tmp\\",
+    "\\AppData\\Local\\Temp\\"
+  )
+| where AccessMask == "0x2"
+| summarize FileOperationCount = count(),
+            FileList = make_set(ObjectName, 20)
+  by Account, Computer,
+     bin(TimeGenerated, 5m)
+| where FileOperationCount > 10
+| extend AlertDetail = strcat(
+    "Account: ", Account,
+    " staged ", FileOperationCount,
+    " files in temp on: ", Computer
+  )

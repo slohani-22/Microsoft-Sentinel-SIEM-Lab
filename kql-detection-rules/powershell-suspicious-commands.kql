@@ -1,0 +1,25 @@
+// Rule: Execution - PowerShell Suspicious Commands
+// Severity: High
+// MITRE: T1059.001 - PowerShell, T1027 - Obfuscated Files or Information
+// Tactic: Execution, Defense Evasion
+// Description: Detects PowerShell encoded commands and download cradles
+//              indicating obfuscated execution or in-memory payload delivery
+// Note: Queries Event table (not SecurityEvent) - 4104 logs to PowerShell
+//       Operational channel collected via DCR XPath
+
+Event
+| where EventID == 4104
+| where TimeGenerated > ago(1h)
+| where RenderedDescription has_any (
+    "EncodedCommand", "-enc ", "-e ",
+    "FromBase64String", "DownloadString",
+    "DownloadFile", "IEX", "Invoke-Expression",
+    "WebClient", "Net.WebClient",
+    "Invoke-WebRequest", "curl", "wget"
+  )
+| project TimeGenerated, Computer, EventID,
+          RenderedDescription
+| extend AlertDetail = strcat(
+    "Suspicious PowerShell on: ", Computer,
+    " at: ", TimeGenerated
+  )

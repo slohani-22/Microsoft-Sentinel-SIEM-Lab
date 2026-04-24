@@ -1,0 +1,20 @@
+// Rule: Persistence - Scheduled Task Created
+// Severity: Medium
+// MITRE: T1053.005 - Scheduled Task/Job: Scheduled Task
+// Tactic: Persistence, Privilege Escalation
+// Description: Detects scheduled task creation events which may indicate
+//              attacker persistence mechanism
+
+SecurityEvent
+| where EventID == 4698
+| where TimeGenerated > ago(1h)
+| extend TaskName = extractjson("$.TaskName", EventData)
+| extend TaskContent = extractjson("$.TaskContent", EventData)
+| extend SubjectUser = extractjson("$.SubjectUserName", EventData)
+| project TimeGenerated, Computer, Account,
+          TaskName, SubjectUser, EventData
+| extend AlertDetail = strcat(
+    "Scheduled task created: ", TaskName,
+    " by: ", SubjectUser,
+    " on: ", Computer
+  )

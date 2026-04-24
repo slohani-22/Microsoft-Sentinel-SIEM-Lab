@@ -1,0 +1,21 @@
+// Rule: Discovery - Suspicious DNS Query
+// Severity: Medium
+// MITRE: T1071.004 - Application Layer Protocol: DNS
+// Tactic: Command and Control
+// Description: Detects DNS queries to suspicious domains from VM indicating
+//              potential C2 communication or reconnaissance activity
+// Note: Queries Event table - DNS Client Operational logs collected via DCR XPath
+
+Event
+| where TimeGenerated > ago(1h)
+| where Source == "Microsoft-Windows-DNS-Client"
+| where RenderedDescription !has "microsoft.com"
+      and RenderedDescription !has "windows.com"
+      and RenderedDescription !has "azure.com"
+      and RenderedDescription !has "google.com"
+| project TimeGenerated, Computer,
+          RenderedDescription
+| extend AlertDetail = strcat(
+    "Suspicious DNS query on: ", Computer,
+    " detail: ", RenderedDescription
+  )
